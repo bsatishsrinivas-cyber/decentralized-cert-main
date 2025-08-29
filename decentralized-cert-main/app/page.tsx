@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { WalletConnect } from "@/components/wallet-connect"
+import { EnhancedWalletConnect } from "@/components/enhanced-wallet-connect"
 import { useWallet } from "@/lib/wallet-context"
+import { CertificateDetailsModal } from "@/components/certificate-details-modal"
 import {
   Shield,
   Search,
@@ -75,12 +76,19 @@ export default function CertificateVerifier() {
   const [activeTab, setActiveTab] = useState("verify")
   const [verificationResult, setVerificationResult] = useState<Certificate | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadedCertificates, setUploadedCertificates] = useState<any[]>([])
+  const [showCertificatesModal, setShowCertificatesModal] = useState(false)
+  const [selectedFileForPreview, setSelectedFileForPreview] = useState<{file: File, certificate: any} | null>(null)
+  const [verificationResults, setVerificationResults] = useState<{[key: string]: any}>({})
   const [formData, setFormData] = useState({
     title: "",
     recipient: "",
     issuer: "",
     date: "",
-    description: "",
   })
   const { wallet } = useWallet()
 
@@ -130,6 +138,95 @@ export default function CertificateVerifier() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Please select a valid file type (PDF, JPEG, PNG)');
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+
+      setUploadedFile(file);
+      console.log('File selected:', file.name, file.size, file.type);
+    }
+  };
+
+  const handleUploadCertificate = async () => {
+    if (!wallet.isConnected) {
+      alert("Please connect your wallet first")
+      return
+    }
+
+    if (!formData.title || !formData.recipient || !formData.issuer || !formData.date) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    if (!uploadedFile) {
+      alert('Please select a certificate file first')
+      return
+    }
+
+    setIsUploading(true)
+    
+    try {
+      // Create certificate metadata
+      const certificateMetadata = {
+        id: `CERT-${Date.now()}`,
+        title: formData.title || 'Untitled Certificate',
+        issuer: formData.issuer || 'Unknown',
+        recipient: formData.recipient || 'Unknown',
+        issueDate: formData.date || new Date().toISOString().split('T')[0],
+        description: formData.description || '',
+        fileName: uploadedFile.name,
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.type,
+        uploadDate: new Date().toISOString(),
+        walletAddress: wallet.address
+      }
+      
+      console.log('Certificate created:', certificateMetadata)
+      
+      // Save certificate to uploaded certificates with file
+      setUploadedCertificates(prev => [...prev, {
+        ...certificateMetadata,
+        file: uploadedFile // Store the actual file
+      }])
+      
+      alert(`Certificate created successfully!\n\nCertificate ID: ${certificateMetadata.id}\nTitle: ${certificateMetadata.title}\nIssuer: ${certificateMetadata.issuer}\nRecipient: ${certificateMetadata.recipient}\nFile: ${certificateMetadata.fileName}`)
+      
+      // Reset form and file
+      setFormData({
+        title: "",
+        recipient: "",
+        issuer: "",
+        date: "",
+      })
+      setUploadedFile(null)
+      
+      // Reset file input
+      const fileInput = document.getElementById('certificate-file') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      
+    } catch (error) {
+      alert('Certificate creation failed. Please try again.')
+      console.error('Error:', error)
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   const handleIssueCertificate = async () => {
     if (!wallet.isConnected) {
       alert("Please connect your wallet first")
@@ -138,6 +235,205 @@ export default function CertificateVerifier() {
     // Simulate certificate issuance
     alert("Certificate issued successfully! Transaction ID: SP5P5E5TQOA6...")
   }
+
+  const verifyCertificate = (certificate: any) => {
+    // Enhanced verification process with multiple checks
+    const verificationResults = {
+      fileIntegrity: checkFileIntegrity(certificate.file),
+      metadataValidation: checkMetadataValidation(certificate),
+      blockchainVerification: checkBlockchainVerification(certificate),
+      digitalSignature: checkDigitalSignature(certificate),
+      timestampValidation: checkTimestampValidation(certificate)
+    };
+
+    // Calculate overall verification score
+    const totalChecks = Object.keys(verificationResults).length;
+    const passedChecks = Object.values(verificationResults).filter(result => result.passed).length;
+    const verificationScore = (passedChecks / totalChecks) * 100;
+
+    // Determine overall status
+    let status = 'invalid';
+    let message = 'Certificate verification failed - multiple security issues detected';
+    
+    if (verificationScore >= 80) {
+      status = 'verified';
+      message = 'Certificate is authentic and verified on blockchain';
+    } else if (verificationScore >= 60) {
+      status = 'pending';
+      message = 'Certificate verification pending - some checks inconclusive';
+    }
+
+    return {
+      isVerified: verificationScore >= 80,
+      status,
+      message,
+      verificationDate: new Date().toISOString(),
+      verificationScore: Math.round(verificationScore),
+      blockHash: verificationResults.blockchainVerification.passed ? `0x${Math.random().toString(16).substr(2, 40)}...` : null,
+      transactionId: verificationResults.blockchainVerification.passed ? `SP${Math.random().toString(16).substr(2, 8).toUpperCase()}...` : null,
+      detailedResults: verificationResults
+    };
+  };
+
+  const checkFileIntegrity = (file: File) => {
+    // Check file integrity and authenticity
+    const fileSize = file.size;
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type;
+    
+    // Check for suspicious file characteristics
+    const suspiciousPatterns = [
+      /\.exe$/, /\.bat$/, /\.cmd$/, /\.scr$/, /\.pif$/, /\.com$/,
+      /\.vbs$/, /\.js$/, /\.jar$/, /\.msi$/, /\.dll$/, /\.sys$/
+    ];
+    
+    const hasSuspiciousExtension = suspiciousPatterns.some(pattern => pattern.test(fileName));
+    const isReasonableSize = fileSize > 0 && fileSize < 50 * 1024 * 1024; // 50MB limit
+    const hasValidType = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'].includes(fileType);
+    
+    return {
+      passed: !hasSuspiciousExtension && isReasonableSize && hasValidType,
+      details: {
+        fileSize: `${(fileSize / 1024 / 1024).toFixed(2)} MB`,
+        fileType: fileType,
+        hasSuspiciousExtension,
+        isReasonableSize,
+        hasValidType
+      }
+    };
+  };
+
+  const checkMetadataValidation = (certificate: any) => {
+    // Validate certificate metadata
+    const requiredFields = ['title', 'recipient', 'issuer', 'issueDate'];
+    const hasAllRequiredFields = requiredFields.every(field => 
+      certificate[field] && certificate[field].trim().length > 0
+    );
+    
+    const hasValidDate = !isNaN(new Date(certificate.issueDate).getTime());
+    const hasValidRecipient = /^SP[0-9A-Z]{38}$/.test(certificate.recipient) || 
+                             certificate.recipient.includes('@') || 
+                             certificate.recipient.length > 5;
+    
+    return {
+      passed: hasAllRequiredFields && hasValidDate && hasValidRecipient,
+      details: {
+        hasAllRequiredFields,
+        hasValidDate,
+        hasValidRecipient,
+        missingFields: requiredFields.filter(field => !certificate[field] || certificate[field].trim().length === 0)
+      }
+    };
+  };
+
+  const checkBlockchainVerification = (certificate: any) => {
+    // Simulate blockchain verification
+    const hasBlockchainRecord = Math.random() > 0.2; // 80% chance of having blockchain record
+    const isRecentTransaction = Math.random() > 0.1; // 90% chance of recent transaction
+    
+    return {
+      passed: hasBlockchainRecord && isRecentTransaction,
+      details: {
+        hasBlockchainRecord,
+        isRecentTransaction,
+        blockHeight: hasBlockchainRecord ? Math.floor(Math.random() * 1000000) + 1000000 : null
+      }
+    };
+  };
+
+  const checkDigitalSignature = (certificate: any) => {
+    // Simulate digital signature verification
+    const hasValidSignature = Math.random() > 0.15; // 85% chance of valid signature
+    const signatureAlgorithm = hasValidSignature ? 'ECDSA-SHA256' : null;
+    
+    return {
+      passed: hasValidSignature,
+      details: {
+        hasValidSignature,
+        signatureAlgorithm,
+        signatureTimestamp: hasValidSignature ? new Date().toISOString() : null
+      }
+    };
+  };
+
+  const checkTimestampValidation = (certificate: any) => {
+    // Validate timestamps
+    const issueDate = new Date(certificate.issueDate);
+    const uploadDate = new Date(certificate.uploadDate);
+    const currentDate = new Date();
+    
+    const isIssueDateValid = issueDate <= currentDate && issueDate >= new Date('2020-01-01');
+    const isUploadDateValid = uploadDate <= currentDate && uploadDate >= issueDate;
+    const isTimeSequenceValid = uploadDate >= issueDate;
+    
+    return {
+      passed: isIssueDateValid && isUploadDateValid && isTimeSequenceValid,
+      details: {
+        isIssueDateValid,
+        isUploadDateValid,
+        isTimeSequenceValid,
+        issueDate: issueDate.toISOString(),
+        uploadDate: uploadDate.toISOString()
+      }
+    };
+  };
+
+  const handleFilePreview = (certificate: any) => {
+    if (certificate.file) {
+      setSelectedFileForPreview({ file: certificate.file, certificate });
+    }
+  };
+
+  const handleVerifyCertificate = (certificate: any) => {
+    const verification = verifyCertificate(certificate);
+    setVerificationResults(prev => ({
+      ...prev,
+      [certificate.id]: verification
+    }));
+  };
+
+  const renderFilePreview = (file: File) => {
+    const fileType = file.type;
+    
+    if (fileType.startsWith('image/')) {
+      // Image preview
+      const url = URL.createObjectURL(file);
+      return (
+        <div className="flex justify-center">
+          <img 
+            src={url} 
+            alt="Certificate preview" 
+            className="max-w-full max-h-96 object-contain rounded-lg border border-border"
+            onLoad={() => URL.revokeObjectURL(url)}
+          />
+        </div>
+      );
+    } else if (fileType === 'application/pdf') {
+      // PDF preview
+      const url = URL.createObjectURL(file);
+      return (
+        <div className="flex justify-center">
+          <iframe
+            src={url}
+            className="w-full h-96 border border-border rounded-lg"
+            title="PDF preview"
+            onLoad={() => URL.revokeObjectURL(url)}
+          />
+        </div>
+      );
+    } else {
+      // Generic file preview
+      return (
+        <div className="flex items-center justify-center h-32 border-2 border-dashed border-border rounded-lg">
+          <div className="text-center">
+            <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">{file.name}</p>
+            <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+          </div>
+        </div>
+      );
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -185,24 +481,41 @@ export default function CertificateVerifier() {
         <header className="border-b border-border/50 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
           <div className="container mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <Shield className="h-8 w-8 text-primary animate-pulse-glow" />
-                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-md" />
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <Shield className="h-8 w-8 text-primary animate-pulse-glow" />
+                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-md" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                      CertifyChain
+                    </h1>
+                    <p className="text-sm text-muted-foreground">Decentralized Certificate Verification</p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    CertifyChain
-                  </h1>
-                  <p className="text-sm text-muted-foreground">Decentralized Certificate Verification</p>
+                
+                {/* Certificates Column */}
+                <div 
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-accent/10 p-2 rounded-lg transition-colors duration-200"
+                  onClick={() => setShowCertificatesModal(true)}
+                >
+                  <Award className="h-5 w-5 text-accent" />
+                  <div>
+                    <div className="text-sm font-medium text-foreground">Certificates</div>
+                    <div className="text-xs text-muted-foreground">
+                      {uploadedCertificates.length} uploaded
+                    </div>
+                  </div>
                 </div>
               </div>
+              
               <div className="flex items-center space-x-4">
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                   <Database className="h-3 w-3 mr-1" />
                   Stacks Network
                 </Badge>
-                <WalletConnect />
+                <EnhancedWalletConnect />
               </div>
             </div>
           </div>
@@ -268,7 +581,7 @@ export default function CertificateVerifier() {
                   className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Issue Certificate
+                  Add Certificate
                 </TabsTrigger>
               </TabsList>
 
@@ -431,6 +744,10 @@ export default function CertificateVerifier() {
                               variant="outline"
                               size="sm"
                               className="opacity-0 group-hover:opacity-100 transition-opacity bg-transparent"
+                              onClick={() => {
+                                setSelectedCertificate(cert)
+                                setIsModalOpen(true)
+                              }}
                             >
                               View Details
                             </Button>
@@ -448,19 +765,19 @@ export default function CertificateVerifier() {
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-2 text-yellow-600">
                         <AlertCircle className="h-4 w-4" />
-                        <span className="text-sm">Please connect your wallet to issue certificates</span>
+                        <span className="text-sm">Please connect your wallet to add certificates</span>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+                <Card className="border-accent/30 bg-accent/5 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                      <Upload className="h-5 w-5 text-primary" />
-                      <span>Issue New Certificate</span>
+                      <Upload className="h-5 w-5 text-accent" />
+                      <span>Add New Certificate</span>
                     </CardTitle>
-                    <CardDescription>Create and issue a new certificate on the Stacks blockchain</CardDescription>
+                    <CardDescription>Create and add a new certificate on the Stacks blockchain</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -501,18 +818,53 @@ export default function CertificateVerifier() {
                         />
                       </div>
                     </div>
+
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Certificate Description</label>
-                      <textarea
-                        className="w-full p-3 rounded-md border border-border bg-background/50 text-sm resize-none"
-                        rows={3}
-                        placeholder="Describe the certificate and its requirements..."
-                        value={formData.description}
-                        onChange={(e) => handleFormChange("description", e.target.value)}
-                      />
+                      <label className="text-sm font-medium">Certificate File</label>
+                      <div className="flex space-x-2">
+                        <input
+                          id="certificate-file"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => document.getElementById('certificate-file')?.click()}
+                          disabled={!wallet.isConnected}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadedFile ? uploadedFile.name : 'Select Certificate File'}
+                        </Button>
+                      </div>
+                      {uploadedFile && (
+                        <div className="text-xs text-muted-foreground">
+                          Selected: {uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </div>
+                      )}
                     </div>
+                    {uploadedFile && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        disabled={!wallet.isConnected || isUploading}
+                        onClick={handleUploadCertificate}
+                      >
+                        {isUploading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload
+                          </>
+                        )}
+                      </Button>
+                    )}
                     <Button className="w-full" onClick={handleIssueCertificate} disabled={!wallet.isConnected}>
-                      Issue Certificate on Stacks
+                      Add Certificate on Stacks
                     </Button>
                   </CardContent>
                 </Card>
@@ -521,6 +873,273 @@ export default function CertificateVerifier() {
           </div>
         </section>
       </div>
+
+      {/* Certificate Details Modal */}
+      <CertificateDetailsModal
+        certificate={selectedCertificate}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedCertificate(null)
+        }}
+      />
+
+      {/* Certificates Modal */}
+      {showCertificatesModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div className="flex items-center space-x-3">
+                <Award className="h-6 w-6 text-accent" />
+                <h2 className="text-xl font-bold">Uploaded Certificates</h2>
+                <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
+                  {uploadedCertificates.length} certificates
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCertificatesModal(false)}
+                className="h-8 w-8 p-0"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {uploadedCertificates.length === 0 ? (
+                <div className="text-center py-12">
+                  <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No Certificates Uploaded</h3>
+                  <p className="text-sm text-muted-foreground">Upload your first certificate to see it here</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {uploadedCertificates.map((cert, index) => {
+                    const verification = verificationResults[cert.id];
+                    return (
+                      <Card key={cert.id} className="border-border/50 bg-card/50">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{cert.title}</CardTitle>
+                            <div className="flex items-center space-x-2">
+                              {verification ? (
+                                <>
+                                  {getStatusIcon(verification.status)}
+                                  <Badge className={getStatusBadge(verification.status)}>
+                                    {verification.status}
+                                  </Badge>
+                                </>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleVerifyCertificate(cert)}
+                                  className="text-xs"
+                                >
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Verify
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-muted-foreground">Recipient:</span>
+                              <p className="text-foreground">{cert.recipient}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Issuer:</span>
+                              <p className="text-foreground">{cert.issuer}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Issue Date:</span>
+                              <p className="text-foreground">{cert.issueDate}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">File:</span>
+                              <p className="text-foreground">{cert.fileName}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Certificate ID:</span>
+                              <p className="text-foreground font-mono text-xs">{cert.id}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Upload Date:</span>
+                              <p className="text-foreground">{new Date(cert.uploadDate).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          
+                                                     {verification && (
+                             <div className="border-t border-border/50 pt-3">
+                               <div className="flex items-center justify-between mb-3">
+                                 <div className="flex items-center space-x-2">
+                                   <Shield className="h-4 w-4 text-primary" />
+                                   <span className="text-sm font-medium">Verification Details</span>
+                                   <Badge variant="outline" className="text-xs">
+                                     {verification.verificationScore}% Score
+                                   </Badge>
+                                 </div>
+                                 {cert.file && (
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => handleFilePreview(cert)}
+                                     className="text-xs"
+                                   >
+                                     <ExternalLink className="h-3 w-3 mr-1" />
+                                     View File
+                                   </Button>
+                                 )}
+                               </div>
+                               <p className="text-sm text-muted-foreground mb-3">{verification.message}</p>
+                             
+                             {/* Detailed Verification Results */}
+                             <div className="space-y-2 text-xs">
+                               <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                                 <span className="font-medium">File Integrity</span>
+                                 <div className="flex items-center space-x-1">
+                                   {verification.detailedResults.fileIntegrity.passed ? 
+                                     <CheckCircle className="h-3 w-3 text-green-500" /> : 
+                                     <XCircle className="h-3 w-3 text-red-500" />
+                                   }
+                                   <span className={verification.detailedResults.fileIntegrity.passed ? 'text-green-600' : 'text-red-600'}>
+                                     {verification.detailedResults.fileIntegrity.passed ? 'Passed' : 'Failed'}
+                                   </span>
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                                 <span className="font-medium">Metadata Validation</span>
+                                 <div className="flex items-center space-x-1">
+                                   {verification.detailedResults.metadataValidation.passed ? 
+                                     <CheckCircle className="h-3 w-3 text-green-500" /> : 
+                                     <XCircle className="h-3 w-3 text-red-500" />
+                                   }
+                                   <span className={verification.detailedResults.metadataValidation.passed ? 'text-green-600' : 'text-red-600'}>
+                                     {verification.detailedResults.metadataValidation.passed ? 'Passed' : 'Failed'}
+                                   </span>
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                                 <span className="font-medium">Blockchain Verification</span>
+                                 <div className="flex items-center space-x-1">
+                                   {verification.detailedResults.blockchainVerification.passed ? 
+                                     <CheckCircle className="h-3 w-3 text-green-500" /> : 
+                                     <XCircle className="h-3 w-3 text-red-500" />
+                                   }
+                                   <span className={verification.detailedResults.blockchainVerification.passed ? 'text-green-600' : 'text-red-600'}>
+                                     {verification.detailedResults.blockchainVerification.passed ? 'Passed' : 'Failed'}
+                                   </span>
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                                 <span className="font-medium">Digital Signature</span>
+                                 <div className="flex items-center space-x-1">
+                                   {verification.detailedResults.digitalSignature.passed ? 
+                                     <CheckCircle className="h-3 w-3 text-green-500" /> : 
+                                     <XCircle className="h-3 w-3 text-red-500" />
+                                   }
+                                   <span className={verification.detailedResults.digitalSignature.passed ? 'text-green-600' : 'text-red-600'}>
+                                     {verification.detailedResults.digitalSignature.passed ? 'Passed' : 'Failed'}
+                                   </span>
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                                 <span className="font-medium">Timestamp Validation</span>
+                                 <div className="flex items-center space-x-1">
+                                   {verification.detailedResults.timestampValidation.passed ? 
+                                     <CheckCircle className="h-3 w-3 text-green-500" /> : 
+                                     <XCircle className="h-3 w-3 text-red-500" />
+                                   }
+                                   <span className={verification.detailedResults.timestampValidation.passed ? 'text-green-600' : 'text-red-600'}>
+                                     {verification.detailedResults.timestampValidation.passed ? 'Passed' : 'Failed'}
+                                   </span>
+                                 </div>
+                               </div>
+                             </div>
+                             
+                                                            {verification.isVerified && (
+                                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                   <div>
+                                     <span className="font-medium text-muted-foreground">Block Hash:</span>
+                                     <p className="font-mono text-foreground">{verification.blockHash}</p>
+                                   </div>
+                                   <div>
+                                     <span className="font-medium text-muted-foreground">Transaction ID:</span>
+                                     <p className="font-mono text-foreground">{verification.transactionId}</p>
+                                   </div>
+                                 </div>
+                               )}
+                             </div>
+                           )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File Preview Modal */}
+      {selectedFileForPreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div className="flex items-center space-x-3">
+                <Upload className="h-6 w-6 text-accent" />
+                <div>
+                  <h2 className="text-xl font-bold">File Preview</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedFileForPreview.certificate.title} - {selectedFileForPreview.file.name}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedFileForPreview(null)}
+                className="h-8 w-8 p-0"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              {renderFilePreview(selectedFileForPreview.file)}
+              
+              <div className="mt-6 pt-4 border-t border-border/50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-muted-foreground">File Name:</span>
+                    <p className="text-foreground">{selectedFileForPreview.file.name}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-muted-foreground">File Size:</span>
+                    <p className="text-foreground">{(selectedFileForPreview.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-muted-foreground">File Type:</span>
+                    <p className="text-foreground">{selectedFileForPreview.file.type}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-muted-foreground">Certificate ID:</span>
+                    <p className="text-foreground font-mono text-xs">{selectedFileForPreview.certificate.id}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

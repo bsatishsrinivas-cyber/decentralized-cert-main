@@ -30,7 +30,8 @@ function getAddressFromPrivateKey(privateKey: string): string {
 // Helper function to get nonce
 async function getNonce(address: string, network: any): Promise<number> {
   try {
-    const response = await fetch(`${network.coreApiUrl}/extended/v1/address/${address}/nonces`);
+    const apiUrl = network.getCoreApiUrl();
+    const response = await fetch(`${apiUrl}/extended/v1/address/${address}/nonces`);
     const data = await response.json();
     return data.last_executed_tx_nonce || 0;
   } catch (error) {
@@ -45,7 +46,7 @@ export async function deployContract() {
     
     console.log('🚀 Deploying CertifyChain contract...');
     console.log('Address:', address);
-    console.log('Network:', NETWORK.coreApiUrl.includes('mainnet') ? 'mainnet' : 'testnet');
+    console.log('Network:', NETWORK.getCoreApiUrl().includes('mainnet') ? 'mainnet' : 'testnet');
     console.log('Contract Path:', CONTRACT_PATH);
     
     // Check if contract file exists
