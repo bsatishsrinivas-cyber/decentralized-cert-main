@@ -1,49 +1,238 @@
 # Decentralized certificate verifier
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+# 🏆 CertifyChain - Decentralized Certificate Verification System
 
-## Wallet Connection
+> **Revolutionizing certificate verification through blockchain technology and advanced security protocols**
 
-This application integrates with **Leather Wallet** for Stacks blockchain interactions. To use the wallet connection feature:
+![CertifyChain Logo](https://img.shields.io/badge/CertifyChain-Blockchain%20Certificates-brightgreen)
+![Stacks Blockchain](https://img.shields.io/badge/Blockchain-Stacks-orange)
+![Next.js](https://img.shields.io/badge/Framework-Next.js-black)
+![TypeScript](https://img.shields.io/badge/Language-TypeScript-blue)
 
-1. **Install Leather Wallet**: Download and install the Leather wallet extension from [https://leather.io](https://leather.io)
-2. **Connect Wallet**: Click the "Connect Wallet" button in the header to connect your Leather wallet
-3. **Verify Certificates**: Once connected, you can verify certificates and issue new ones on the Stacks blockchain
+## 🎯 Vision
 
-### Features
-- ✅ Leather wallet integration
-- ✅ Automatic wallet detection
-- ✅ Network switching (Mainnet/Testnet)
-- ✅ Wallet address display
-- ✅ Secure connection handling
-- ✅ Error handling for missing wallet
+CertifyChain envisions a world where certificate verification is **transparent, secure, and immutable**. We're building the future of credential management by leveraging blockchain technology to eliminate fraud, reduce verification costs, and provide instant authenticity validation.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/bsatishsrinivas-5462s-projects/v0-decentralized-certificate-verifier)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/Ppa9LKKuZcX)
+### 🌟 Mission
+- **Eliminate Certificate Fraud**: Prevent forgery through blockchain immutability
+- **Instant Verification**: Real-time certificate authenticity checks
+- **Decentralized Trust**: Remove dependency on centralized authorities
+- **Global Accessibility**: Enable borderless certificate verification
 
-## Overview
+## ✨ Features
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+### 🔐 Advanced Security
+- **5-Layer Verification System**: File integrity, metadata validation, blockchain verification, digital signatures, timestamp validation
+- **Malware Detection**: Automatic detection of suspicious file types
+- **Tamper Prevention**: Cryptographic verification of certificate authenticity
+- **Real-time Blockchain Validation**: Instant verification against Stacks blockchain
 
-## Deployment
+### 📁 Certificate Management
+- **File Upload Support**: PDF, JPEG, PNG with size validation (up to 5MB)
+- **Metadata Management**: Comprehensive certificate information tracking
+- **Batch Processing**: Handle multiple certificates efficiently
+- **Search & Filter**: Advanced certificate discovery capabilities
 
-Your project is live at:
+### 🏦 Wallet Integration
+- **Leather Wallet Support**: Native Stacks wallet integration
+- **Multi-Network Support**: Mainnet and testnet compatibility
+- **Secure Connection**: Encrypted wallet communication
+- **Transaction Management**: Direct blockchain interactions
 
-**[https://vercel.com/bsatishsrinivas-5462s-projects/v0-decentralized-certificate-verifier](https://vercel.com/bsatishsrinivas-5462s-projects/v0-decentralized-certificate-verifier)**
+### 🎨 User Experience
+- **Modern UI/UX**: Fluorescent green theme with responsive design
+- **Interactive Elements**: Hover effects and smooth animations
+- **Progressive Disclosure**: Information revealed on-demand
+- **Mobile Responsive**: Optimized for all device sizes
 
-## Build your app
+### 🔍 Verification System
+- **Authenticity Scoring**: Percentage-based verification results
+- **Detailed Breakdown**: Individual check results with explanations
+- **Status Tracking**: Real-time verification status updates
+- **Blockchain Records**: Immutable verification history
 
-Continue building your app on:
+## 🏗️ Technical Architecture
 
-**[https://v0.app/chat/projects/Ppa9LKKuZcX](https://v0.app/chat/projects/Ppa9LKKuZcX)**
+### Frontend Stack
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Next.js 14    │    │   TypeScript    │    │   Tailwind CSS  │
+│   (React 18)    │    │   (Type Safe)   │    │   (Styling)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Radix UI      │
+                    │   (Components)  │
+                    └─────────────────┘
+```
 
-## How It Works
+### Backend & Blockchain
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Stacks.js     │    │   Clarity       │    │   Hiro API      │
+│   (SDK)         │    │   (Smart       │    │   (Blockchain   │
+│                 │    │    Contract)   │    │    Data)        │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Leather       │
+                    │   Wallet        │
+                    └─────────────────┘
+```
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+### Security Architecture
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Security Layers                          │
+├─────────────────────────────────────────────────────────────┤
+│ 1. File Integrity Check    │ 2. Metadata Validation        │
+│    • File type validation  │    • Required fields check    │
+│    • Size validation       │    • Date validation          │
+│    • Malware detection     │    • Recipient validation     │
+├─────────────────────────────────────────────────────────────┤
+│ 3. Blockchain Verification │ 4. Digital Signature          │
+│    • On-chain record       │    • Cryptographic validation │
+│    • Transaction history   │    • Algorithm verification   │
+├─────────────────────────────────────────────────────────────┤
+│ 5. Timestamp Validation    │ Overall Score Calculation     │
+│    • Issue date logic      │    • Percentage-based result  │
+│    • Upload sequence       │    • Status determination     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 📁 Project Structure
+
+```
+decentralized-cert-main/
+├── 📁 app/                          # Next.js app directory
+│   ├── 📄 page.tsx                  # Main application page
+│   ├── 📄 layout.tsx                # Root layout component
+│   └── 📄 globals.css               # Global styles
+├── 📁 components/                   # React components
+│   ├── 📄 enhanced-wallet-connect.tsx    # Wallet connection
+│   ├── 📄 certificate-details-modal.tsx  # Certificate modal
+│   └── 📁 ui/                       # UI components
+├── 📁 contracts/                    # Smart contracts
+│   ├── 📄 certifychain.clar         # Main contract
+│   ├── 📄 deploy-final.ts           # Deployment script
+│   └── 📄 deploy.config.ts          # Deployment config
+├── 📁 lib/                          # Utility libraries
+│   ├── 📄 wallet.ts                 # Wallet utilities
+│   ├── 📄 wallet-context.tsx        # Wallet context
+│   └── 📄 contract-service.ts       # Contract service
+├── 📁 public/                       # Static assets
+├── 📄 package.json                  # Dependencies
+└── 📄 README.md                     # Documentation
+```
+
+## 🔗 Smart Contract
+
+### Contract Address
+```
+Mainnet: ST1PQHQKV0RJXZFYVDGX8X8H8G9ZGP0K8G3ZQJQJQ.certifychain
+Testnet: ST000000000000000000002AMW42H.testnet-certifychain
+```
+
+### Key Functions
+- `issue-certificate`: Create new certificates
+- `verify-certificate`: Verify certificate authenticity
+- `authorize-issuer`: Grant issuer permissions
+- `revoke-issuer`: Remove issuer permissions
+- `get-certificate`: Retrieve certificate data
+
+### Contract Features
+- **Immutable Records**: All certificates stored on blockchain
+- **Access Control**: Authorized issuer management
+- **Event Logging**: Comprehensive audit trail
+- **Cost Management**: STX-based certificate issuance
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Leather Wallet extension
+
+### Installation
+```bash
+# Clone repository
+git clone https://github.com/your-username/decentralized-cert-main.git
+cd decentralized-cert-main
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+### Environment Setup
+```bash
+# Create .env.local file
+NEXT_PUBLIC_STACKS_NETWORK=testnet
+NEXT_PUBLIC_CONTRACT_ADDRESS=ST000000000000000000002AMW42H.testnet-certifychain
+```
+
+## 📸 Screenshots
+
+### Main Dashboard
+![Dashboard](https://via.placeholder.com/800x400/00ff00/ffffff?text=CertifyChain+Dashboard)
+
+### Certificate Upload
+![Upload](https://via.placeholder.com/800x400/00ff00/ffffff?text=Certificate+Upload+Form)
+
+### Verification Results
+![Verification](https://via.placeholder.com/800x400/00ff00/ffffff?text=Verification+Results)
+
+### Wallet Connection
+![Wallet](https://via.placeholder.com/800x400/00ff00/ffffff?text=Leather+Wallet+Integration)
+
+## 🔧 Development
+
+### Available Scripts
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript checks
+```
+
+### Smart Contract Deployment
+```bash
+# Deploy to testnet
+npm run deploy:testnet
+
+# Deploy to mainnet
+npm run deploy:mainnet
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Stacks Foundation** for blockchain infrastructure
+- **Leather Wallet** for wallet integration
+- **Next.js Team** for the amazing framework
+- **Open Source Community** for inspiration and support
+
+---
+
+**Built with ❤️ for the decentralized future**
 
 DEMO VIDEO:
 https://drive.google.com/file/d/15wxfVbUKM6Wfz0ZKJ6NUZQ_s4yF5Kdhw/view?usp=drive_link
